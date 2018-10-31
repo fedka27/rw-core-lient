@@ -1,6 +1,10 @@
 package me.rocketwash.client.data.api.support
 
 import me.rocketwash.client.data.api.ApiRocketWashCoroutines.Companion.HEADER_SESSION
+import me.rocketwash.client.data.dto.CarMake
+import me.rocketwash.client.data.dto.CarsAttributes
+import me.rocketwash.client.data.dto.CarsMakes
+import me.rocketwash.client.data.dto.ProfileResult
 import me.rocketwash.client.data.dto.sign_in.LoginData
 import me.rocketwash.client.data.dto.sign_in.SignIn
 import me.rocketwash.client.data.responses.BaseResponse
@@ -99,17 +103,6 @@ interface ApiRocketwash {
     ): Call<me.rocketwash.client.data.dto.ChoiseServiceResult>
 
     /**
-     * Create car
-     * */
-    @POST("cars")
-    fun createCar(
-        @Header(HEADER_SESSION) sessionId: String,
-        @Query("car_make_id") carMakeId: Int,
-        @Query("car_model_id") carModelId: Int,
-        @Query("tag") tag: String
-    ): Call<me.rocketwash.client.data.dto.PostCarResult>
-
-    /**
      * Create empty user
      * */
     @POST("user_actions/create_empty_user")
@@ -173,7 +166,39 @@ interface ApiRocketwash {
 
     /** get profile */
     @GET("profile")
-    fun getProfile(@Header(HEADER_SESSION) sessionId: String): Call<me.rocketwash.client.data.dto.ProfileResult>
+    fun getProfile(@Header(HEADER_SESSION) sessionId: String): Call<ProfileResult>
+
+    @PUT("profile")
+    fun putProfile(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("user[name]") username: String?
+    ): Call<ProfileResult>
+
+
+    @POST("cars")
+    fun createCar(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("car_make_id") carMakeId: Int,
+        @Query("car_model_id") carModelId: Int,
+        @Query("year") year: Int,
+        @Query("tag") tag: String
+    ): Call<BaseResponse<CarsAttributes>>
+
+    @PUT("cars/id")
+    fun updateCar(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("id") carId: Int,
+        @Query("car_make_id") carMakeId: Int,
+        @Query("car_model_id") carModelId: Int,
+        @Query("year") year: Int,
+        @Query("tag") tag: String
+    ): Call<BaseResponse<CarsAttributes>>
+
+    @DELETE("cars/id")
+    fun deleteCar(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("id") carId: Int
+    ): Call<BaseResponse<CarsAttributes>>
 
     /**
      * get questions

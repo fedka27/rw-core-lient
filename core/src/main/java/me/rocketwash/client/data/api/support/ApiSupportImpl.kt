@@ -1,16 +1,17 @@
 package me.rocketwash.client.data.api.support
 
-import me.rocketwash.client.data.dto.ChoiseServiceResult
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import me.rocketwash.client.BuildConfig;
+import me.rocketwash.client.data.dto.*
 import me.rocketwash.client.data.dto.sign_in.LoginData
 import me.rocketwash.client.data.responses.BaseResponse
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.Year
 
 class ApiSupportImpl {
     private var apiMapper = me.rocketwash.client.data.api.mapper.ApiMapper()
@@ -78,6 +79,138 @@ class ApiSupportImpl {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
+                requests.remove(call)
+            }
+
+        })
+
+        requests.add(call)
+    }
+
+    /**
+     * Create car
+     * */
+    fun createCar(
+        sessionId: String,
+        carMakeId: Int,
+        carModelId: Int,
+        year: Int,
+        tag: String,
+        functionSuccess: (BaseResponse<CarsAttributes>) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
+
+        val call = getInstanceApiSupport().createCar(sessionId, carMakeId, carModelId, year, tag)
+
+        call.enqueue(object : Callback<BaseResponse<CarsAttributes>> {
+            override fun onFailure(call: Call<BaseResponse<CarsAttributes>>, t: Throwable) {
+                functionError.invoke(t)
+                requests.remove(call)
+            }
+
+            override fun onResponse(
+                call: Call<BaseResponse<CarsAttributes>>,
+                response: Response<BaseResponse<CarsAttributes>>
+            ) {
+                try {
+                    functionSuccess.invoke(apiMapper.mapResponse(response))
+                } catch (e: java.lang.Exception) {
+                    functionError.invoke(e)
+                }
+                requests.remove(call)
+            }
+
+        })
+
+        requests.add(call)
+
+    }
+
+    fun saveUsername(
+        sessionId: String,
+        profile: Profile,
+        functionSuccess: (ProfileResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
+
+        val requestCount = profile.cars_attributes.size
+        var requestIndex = 0
+
+        for (carAttrs in profile.cars_attributes) {
+
+            val call =
+                if (carAttrs.id == 0 && carAttrs.type == 0) { //Add car
+                    getInstanceApiSupport().createCar(
+                        sessionId,
+                        carAttrs.car_make_id,
+                        carAttrs.car_model_id,
+                        carAttrs.year,
+                        carAttrs.tag
+                    )
+                } else if (carAttrs.id > 0 && carAttrs.type == 0) { //Update
+                    getInstanceApiSupport().updateCar(
+                        sessionId,
+                        carAttrs.id,
+                        carAttrs.car_make_id,
+                        carAttrs.car_model_id,
+                        carAttrs.year,
+                        carAttrs.tag
+                    )
+                } else { //Delete
+                    getInstanceApiSupport().deleteCar(
+                        sessionId,
+                        carAttrs.id
+                    )
+                }
+
+            call.enqueue(object : Callback<BaseResponse<CarsAttributes>> {
+                override fun onFailure(call: Call<BaseResponse<CarsAttributes>>, t: Throwable) {
+                    requestIndex++
+                    requests.remove(call)
+                    if (requestIndex == requestCount) {
+                        saveUsername(sessionId, profile, functionSuccess, functionError)
+                    }
+                }
+
+                override fun onResponse(
+                    call: Call<BaseResponse<CarsAttributes>>,
+                    response: Response<BaseResponse<CarsAttributes>>
+                ) {
+                    requestIndex++
+                    requests.remove(call)
+                    if (requestIndex == requestCount) {
+                        saveUsername(sessionId, profile, functionSuccess, functionError)
+                    }
+                }
+
+            })
+
+            requests.add(call)
+        }
+
+    }
+
+    fun saveUsername(
+        sessionId: String,
+        userName: String?,
+        functionSuccess: (ProfileResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
+        val call = getInstanceApiSupport().putProfile(sessionId, userName)
+
+        call.enqueue(object : Callback<ProfileResult> {
+            override fun onFailure(call: Call<ProfileResult>, t: Throwable) {
+                functionError.invoke(t)
+                requests.remove(call)
+            }
+
+            override fun onResponse(call: Call<ProfileResult>, response: Response<ProfileResult>) {
+                try {
+                    functionSuccess.invoke(apiMapper.mapResponse(response))
+                } catch (e: java.lang.Exception) {
+                    functionError.invoke(e)
+                }
+
                 requests.remove(call)
             }
 
