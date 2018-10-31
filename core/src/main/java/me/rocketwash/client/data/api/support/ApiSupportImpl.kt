@@ -1,13 +1,12 @@
 package me.rocketwash.client.data.api.support
 
+import me.rocketwash.client.data.dto.ChoiseServiceResult
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
+import me.rocketwash.client.BuildConfig;
 import retrofit2.Callback
 import retrofit2.Response
-import me.rocketwash.client.BuildConfig
-import me.rocketwash.client.data.dto.ChoiseServiceResult
-import me.rocketwash.client.data.dto.ProfileResult
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -369,10 +368,11 @@ class ApiSupportImpl {
 
     /** get reservation detail*/
     fun getReservationDetails(sessionId: String,
+                              orderId: Int,
                               organizationId: Int,
                               functionSuccess: (me.rocketwash.client.data.dto.OrderDetail) -> Unit,
                               functionError: (Throwable) -> Unit) {
-        val call = getInstanceApiSupport().getReservationDetails(sessionId, organizationId)
+        val call = getInstanceApiSupport().getReservationDetails(sessionId, orderId, organizationId)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.OrderDetailResponse> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.OrderDetailResponse>, t: Throwable) {
                 functionError.invoke(t)

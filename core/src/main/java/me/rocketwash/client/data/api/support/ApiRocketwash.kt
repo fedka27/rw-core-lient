@@ -120,6 +120,7 @@ interface ApiRocketwash {
 
     @GET("reservations/{id}")
     fun getReservationDetails(@Header(HEADER_SESSION) sessionId: String,
+                              @Query("id") id: Int,
                               @Query("organization_id") organizationId: Int
     ): Call<me.rocketwash.client.data.dto.OrderDetailResponse>
 
