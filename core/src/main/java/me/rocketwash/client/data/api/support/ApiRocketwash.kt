@@ -15,10 +15,7 @@ interface ApiRocketwash {
      * */
     @Deprecated("old method. Use coroutines")
     @POST("session/sign_in")
-    fun signIn(signIn: SignIn,
-               success: (me.rocketwash.client.data.dto.sign_in.LoginData) -> Unit,
-               exception: (Exception) -> Unit
-    ): Call<Response<BaseResponse<LoginData>>>
+    fun signIn(signIn: SignIn): Call<BaseResponse<LoginData>>
 
     /**
      * Nearest Washes
@@ -187,7 +184,7 @@ interface ApiRocketwash {
     fun putReservationPayment(@Header(HEADER_SESSION) sessionId: String,
                               @Path("reservation_id") reservationId: Int,
                               @Query("organization_id") organizationId: Int,
-                              @Query("tinkoff_transaction_id") tinkoffTransactionId: Int
+                              @Query("tinkoff_transaction_id") tinkoffTransactionId: Long
     ): Call<me.rocketwash.client.data.dto.ReservationPaymentResult>
 
     /**

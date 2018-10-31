@@ -5,6 +5,10 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import me.rocketwash.client.BuildConfig;
+import me.rocketwash.client.data.dto.ProfileResult
+import me.rocketwash.client.data.dto.sign_in.LoginData
+import me.rocketwash.client.data.dto.sign_in.SignIn
+import me.rocketwash.client.data.responses.BaseResponse
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -22,14 +26,18 @@ class ApiSupportImpl {
         fun getInstanceApiSupport(): me.rocketwash.client.data.api.support.ApiRocketwash {
             if (apiRocketwash == null) {
                 apiRocketwash = Retrofit.Builder()
-                        .baseUrl(BuildConfig.BASE_URL)
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .client(OkHttpClient.Builder()
-                                .addInterceptor(HttpLoggingInterceptor()
-                                        .setLevel(HttpLoggingInterceptor.Level.BODY))
-                                .build())
-                        .build()
-                        .create(me.rocketwash.client.data.api.support.ApiRocketwash::class.java)
+                    .baseUrl(BuildConfig.BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(
+                        OkHttpClient.Builder()
+                            .addInterceptor(
+                                HttpLoggingInterceptor()
+                                    .setLevel(HttpLoggingInterceptor.Level.BODY)
+                            )
+                            .build()
+                    )
+                    .build()
+                    .create(me.rocketwash.client.data.api.support.ApiRocketwash::class.java)
             }
             return apiRocketwash!!
         }
@@ -53,16 +61,45 @@ class ApiSupportImpl {
 
     private var requests: MutableList<Call<*>> = mutableListOf()
 
+    fun signIn(
+        phone: String, pincode: String,
+        functionSuccess: (LoginData) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
+        val call = getInstanceApiSupport().signIn(SignIn(phone, pincode))
+
+        call.enqueue(object : Callback<BaseResponse<LoginData>> {
+            override fun onFailure(call: Call<BaseResponse<LoginData>>, t: Throwable) {
+                functionError.invoke(t)
+                requests.remove(call)
+            }
+
+            override fun onResponse(call: Call<BaseResponse<LoginData>>, response: Response<BaseResponse<LoginData>>) {
+                try {
+                    functionSuccess.invoke(apiMapper.mapResponse(response).data)
+                } catch (e: java.lang.Exception) {
+                    functionError.invoke(e)
+                }
+                requests.remove(call)
+            }
+
+        })
+
+        requests.add(call)
+    }
+
     /**
      * get nearest washes
      * */
-    fun getNearestWashes(sessionId: String,
-                         latitude: Double,
-                         longitude: Double,
-                         distance: Int,
-                         page: Int,
-                         functionSuccess: (me.rocketwash.client.data.dto.WashServiceResult) -> Unit,
-                         functionError: (Throwable) -> Unit) {
+    fun getNearestWashes(
+        sessionId: String,
+        latitude: Double,
+        longitude: Double,
+        distance: Int,
+        page: Int,
+        functionSuccess: (me.rocketwash.client.data.dto.WashServiceResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().getNearestWashes(sessionId, latitude, longitude, distance, page)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.WashServiceResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.WashServiceResult>, t: Throwable) {
@@ -70,7 +107,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.WashServiceResult>, response: Response<me.rocketwash.client.data.dto.WashServiceResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.WashServiceResult>,
+                response: Response<me.rocketwash.client.data.dto.WashServiceResult>
+            ) {
                 try {
                     val result = apiMapper.mapResponse(response)
                     functionSuccess.invoke(result)
@@ -87,12 +127,13 @@ class ApiSupportImpl {
     /**
      * Get services of wash by id
      * */
-    fun getServices(sessionId: String,
-                    serviceId: Int,
-                    carModelId: Int,
-                    organizationId: Int,
-                    functionSuccess: (ChoiseServiceResult) -> Unit,
-                    functionError: (Throwable) -> Unit
+    fun getServices(
+        sessionId: String,
+        serviceId: Int,
+        carModelId: Int,
+        organizationId: Int,
+        functionSuccess: (ChoiseServiceResult) -> Unit,
+        functionError: (Throwable) -> Unit
     ) {
         val call = getInstanceApiSupport().services(sessionId, serviceId, carModelId, organizationId)
 
@@ -120,9 +161,10 @@ class ApiSupportImpl {
      * get reserved to washes
      * */
     fun getReservations(
-            sessionId: String,
-            functionSuccess: (me.rocketwash.client.data.dto.ReservedResult) -> Unit,
-            functionError: (Throwable) -> Unit) {
+        sessionId: String,
+        functionSuccess: (me.rocketwash.client.data.dto.ReservedResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().getReservedWashes(sessionId)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReservedResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReservedResult>, t: Throwable) {
@@ -130,7 +172,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ReservedResult>, response: Response<me.rocketwash.client.data.dto.ReservedResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ReservedResult>,
+                response: Response<me.rocketwash.client.data.dto.ReservedResult>
+            ) {
                 try {
                     val result = apiMapper.mapResponse(response)
                     functionSuccess.invoke(result)
@@ -148,11 +193,11 @@ class ApiSupportImpl {
      * Cancel reserved
      * */
     fun cancelReserve(
-            sessionId: String,
-            washId: Int,
-            organizationId: Int,
-            functionSuccess: (me.rocketwash.client.data.dto.ReserveCancelResult) -> Unit,
-            functionError: (Throwable) -> Unit
+        sessionId: String,
+        washId: Int,
+        organizationId: Int,
+        functionSuccess: (me.rocketwash.client.data.dto.ReserveCancelResult) -> Unit,
+        functionError: (Throwable) -> Unit
     ) {
         val call = getInstanceApiSupport().cancelReserve(sessionId, washId, organizationId)
 
@@ -162,7 +207,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ReserveCancelResult>, response: Response<me.rocketwash.client.data.dto.ReserveCancelResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ReserveCancelResult>,
+                response: Response<me.rocketwash.client.data.dto.ReserveCancelResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: Exception) {
@@ -179,11 +227,13 @@ class ApiSupportImpl {
     /**
      * Add Wash to favorite
      * */
-    fun addFavorite(sessionId: String,
-                    washId: Int,
-                    organizationId: Int,
-                    functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
-                    functionError: (Throwable) -> Unit) {
+    fun addFavorite(
+        sessionId: String,
+        washId: Int,
+        organizationId: Int,
+        functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().addToFavorite(sessionId, washId, organizationId)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ProfileResult>, t: Throwable) {
@@ -191,7 +241,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ProfileResult>, response: Response<me.rocketwash.client.data.dto.ProfileResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ProfileResult>,
+                response: Response<me.rocketwash.client.data.dto.ProfileResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: Exception) {
@@ -206,10 +259,12 @@ class ApiSupportImpl {
     /**
      * Delete favorite
      * */
-    fun deleteFavorite(sessionId: String,
-                       favoriteId: Int,
-                       functionSuccess: (me.rocketwash.client.data.dto.RemoveFavoriteResult) -> Unit,
-                       functionError: (Throwable) -> Unit) {
+    fun deleteFavorite(
+        sessionId: String,
+        favoriteId: Int,
+        functionSuccess: (me.rocketwash.client.data.dto.RemoveFavoriteResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().deleteFavorite(sessionId, favoriteId)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.RemoveFavoriteResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.RemoveFavoriteResult>, t: Throwable) {
@@ -217,7 +272,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.RemoveFavoriteResult>, response: Response<me.rocketwash.client.data.dto.RemoveFavoriteResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.RemoveFavoriteResult>,
+                response: Response<me.rocketwash.client.data.dto.RemoveFavoriteResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: Exception) {
@@ -232,9 +290,11 @@ class ApiSupportImpl {
     /**
      * get favorites
      * */
-    fun getFavorites(sessionId: String,
-                     functionSuccess: (me.rocketwash.client.data.dto.WashServiceResult) -> Unit,
-                     functionError: (Throwable) -> Unit) {
+    fun getFavorites(
+        sessionId: String,
+        functionSuccess: (me.rocketwash.client.data.dto.WashServiceResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().getFavorites(sessionId)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.WashServiceResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.WashServiceResult>, t: Throwable) {
@@ -242,7 +302,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.WashServiceResult>, response: Response<me.rocketwash.client.data.dto.WashServiceResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.WashServiceResult>,
+                response: Response<me.rocketwash.client.data.dto.WashServiceResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: Exception) {
@@ -257,9 +320,11 @@ class ApiSupportImpl {
     /**
      * get mobile info
      * */
-    fun getMobileInfo(organizationId: Int? = null,
-                      functionSuccess: (me.rocketwash.client.data.dto.InfoResultData) -> Unit,
-                      functionError: (Throwable) -> Unit) {
+    fun getMobileInfo(
+        organizationId: Int? = null,
+        functionSuccess: (me.rocketwash.client.data.dto.InfoResultData) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().getMobileInfo(organizationId)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.InfoResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.InfoResult>, t: Throwable) {
@@ -267,7 +332,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.InfoResult>, response: Response<me.rocketwash.client.data.dto.InfoResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.InfoResult>,
+                response: Response<me.rocketwash.client.data.dto.InfoResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response).data)
                 } catch (e: Exception) {
@@ -282,25 +350,32 @@ class ApiSupportImpl {
     /**
      * get available times to wash
      * */
-    fun getAvailableTimes(sessionId: String,
-                          id: Int,
-                          organizationId: Int,
-                          timeRangeStart: String,
-                          timeRangeEnd: String,
-                          servicesDuration: Int,
-                          functionSuccess: (me.rocketwash.client.data.dto.AvailableTimesResult) -> Unit,
-                          functionError: (Throwable) -> Unit) {
-        val call = getInstanceApiSupport().getAvailableTimes(sessionId, id,
-                organizationId,
-                timeRangeStart,
-                timeRangeEnd,
-                servicesDuration)
+    fun getAvailableTimes(
+        sessionId: String,
+        id: Int,
+        organizationId: Int,
+        timeRangeStart: String,
+        timeRangeEnd: String,
+        servicesDuration: Int,
+        functionSuccess: (me.rocketwash.client.data.dto.AvailableTimesResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
+        val call = getInstanceApiSupport().getAvailableTimes(
+            sessionId, id,
+            organizationId,
+            timeRangeStart,
+            timeRangeEnd,
+            servicesDuration
+        )
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.AvailableTimesResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.AvailableTimesResult>, t: Throwable) {
                 functionError.invoke(t)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.AvailableTimesResult>, response: Response<me.rocketwash.client.data.dto.AvailableTimesResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.AvailableTimesResult>,
+                response: Response<me.rocketwash.client.data.dto.AvailableTimesResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -315,8 +390,10 @@ class ApiSupportImpl {
     /**
      * get cars
      * */
-    fun getCars(functionSuccess: (me.rocketwash.client.data.dto.CarsMakesResult) -> Unit,
-                functionError: (Throwable) -> Unit) {
+    fun getCars(
+        functionSuccess: (me.rocketwash.client.data.dto.CarsMakesResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
 
         val call = getInstanceApiSupport().getCars()
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.CarsMakesResult> {
@@ -325,7 +402,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.CarsMakesResult>, response: Response<me.rocketwash.client.data.dto.CarsMakesResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.CarsMakesResult>,
+                response: Response<me.rocketwash.client.data.dto.CarsMakesResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -342,8 +422,10 @@ class ApiSupportImpl {
     /**
      * create empty user
      * */
-    fun createEmptyUser(functionSuccess: (me.rocketwash.client.data.dto.EmptyUserResult) -> Unit,
-                        functionError: (Throwable) -> Unit) {
+    fun createEmptyUser(
+        functionSuccess: (me.rocketwash.client.data.dto.EmptyUserResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
 
         val call = getInstanceApiSupport().createEmptyUser()
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.EmptyUserResult> {
@@ -352,7 +434,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.EmptyUserResult>, response: Response<me.rocketwash.client.data.dto.EmptyUserResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.EmptyUserResult>,
+                response: Response<me.rocketwash.client.data.dto.EmptyUserResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -367,11 +452,13 @@ class ApiSupportImpl {
     }
 
     /** get reservation detail*/
-    fun getReservationDetails(sessionId: String,
-                              orderId: Int,
-                              organizationId: Int,
-                              functionSuccess: (me.rocketwash.client.data.dto.OrderDetail) -> Unit,
-                              functionError: (Throwable) -> Unit) {
+    fun getReservationDetails(
+        sessionId: String,
+        orderId: Int,
+        organizationId: Int,
+        functionSuccess: (me.rocketwash.client.data.dto.OrderDetail) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().getReservationDetails(sessionId, orderId, organizationId)
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.OrderDetailResponse> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.OrderDetailResponse>, t: Throwable) {
@@ -379,7 +466,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.OrderDetailResponse>, response: Response<me.rocketwash.client.data.dto.OrderDetailResponse>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.OrderDetailResponse>,
+                response: Response<me.rocketwash.client.data.dto.OrderDetailResponse>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response).data)
                 } catch (e: java.lang.Exception) {
@@ -395,9 +485,11 @@ class ApiSupportImpl {
     /**
      * Request new pin to login
      * */
-    fun requestNewPincode(phone: String,
-                          functionSuccess: (me.rocketwash.client.data.dto.PinResult) -> Unit,
-                          functionError: (Throwable) -> Unit) {
+    fun requestNewPincode(
+        phone: String,
+        functionSuccess: (me.rocketwash.client.data.dto.PinResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().requestNewPin(phone.replace("+", ""))
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.PinResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.PinResult>, t: Throwable) {
@@ -405,7 +497,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.PinResult>, response: Response<me.rocketwash.client.data.dto.PinResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.PinResult>,
+                response: Response<me.rocketwash.client.data.dto.PinResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -418,16 +513,20 @@ class ApiSupportImpl {
         requests.add(call)
     }
 
-    fun getMapDirection(originLatitude: Double,
-                        originLongitude: Double,
-                        destinationLatitude: Double,
-                        destinationLongitude: Double,
-                        functionSuccess: (me.rocketwash.client.data.dto.MapRouteResult) -> Unit,
-                        functionError: (Throwable) -> Unit) {
-        val call = getInstanceApiSupport().mapDirection(originLatitude,
-                originLongitude,
-                destinationLatitude,
-                destinationLongitude)
+    fun getMapDirection(
+        originLatitude: Double,
+        originLongitude: Double,
+        destinationLatitude: Double,
+        destinationLongitude: Double,
+        functionSuccess: (me.rocketwash.client.data.dto.MapRouteResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
+        val call = getInstanceApiSupport().mapDirection(
+            originLatitude,
+            originLongitude,
+            destinationLatitude,
+            destinationLongitude
+        )
 
         call.enqueue(object : Callback<String> {
             override fun onFailure(call: Call<String>, t: Throwable) {
@@ -452,13 +551,15 @@ class ApiSupportImpl {
 
     }
 
-    fun answerOfQuestions(sessionId: String,
-                          reservationId: Int,
-                          organizationId: Int,
-                          scope: String,
-                          answers: List<me.rocketwash.client.data.dto.Answer>,
-                          functionSuccess: (me.rocketwash.client.data.dto.AnswersResult) -> Unit,
-                          functionError: (Throwable) -> Unit) {
+    fun answerOfQuestions(
+        sessionId: String,
+        reservationId: Int,
+        organizationId: Int,
+        scope: String,
+        answers: List<me.rocketwash.client.data.dto.Answer>,
+        functionSuccess: (me.rocketwash.client.data.dto.AnswersResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val reviewScaleIds = mutableMapOf<String, Int>()
         val ratings = mutableMapOf<String, Int>()
         val comments = mutableMapOf<String, String?>()
@@ -470,13 +571,15 @@ class ApiSupportImpl {
         }
 
         val call = getInstanceApiSupport()
-                .answerOfQuestions(sessionId,
-                        reservationId,
-                        organizationId,
-                        scope,
-                        reviewScaleIds,
-                        ratings,
-                        comments)
+            .answerOfQuestions(
+                sessionId,
+                reservationId,
+                organizationId,
+                scope,
+                reviewScaleIds,
+                ratings,
+                comments
+            )
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.AnswersResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.AnswersResult>, t: Throwable) {
@@ -484,7 +587,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.AnswersResult>, response: Response<me.rocketwash.client.data.dto.AnswersResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.AnswersResult>,
+                response: Response<me.rocketwash.client.data.dto.AnswersResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -498,25 +604,28 @@ class ApiSupportImpl {
         requests.add(call)
     }
 
-    fun reservation(sessionId: String,
-                    carwashId: Int,
-                    carId: Int,
-                    organizationId: Int,
-                    timeFrom: String,
-                    services: List<me.rocketwash.client.data.dto.ChoiceService>,
-                    functionSuccess: (me.rocketwash.client.data.dto.ReservationResult) -> Unit,
-                    functionError: (Throwable) -> Unit) {
+    fun reservation(
+        sessionId: String,
+        carwashId: Int,
+        carId: Int,
+        organizationId: Int,
+        timeFrom: String,
+        services: List<me.rocketwash.client.data.dto.ChoiceService>,
+        functionSuccess: (me.rocketwash.client.data.dto.ReservationResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
 
         val ids = mutableMapOf<String, Int>()
         val counts = mutableMapOf<String, Int>()
 
         services.filter { it.isCheck }
-                .forEach {
-                    ids["services[][id]"] = it.id
-                    counts["services[][count]"] = 1 // todo move count to params
-                }
+            .forEach {
+                ids["services[][id]"] = it.id
+                counts["services[][count]"] = 1 // todo move count to params
+            }
 
-        val call = getInstanceApiSupport().reservation(sessionId, carwashId, carId, organizationId, timeFrom, ids, counts)
+        val call =
+            getInstanceApiSupport().reservation(sessionId, carwashId, carId, organizationId, timeFrom, ids, counts)
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReservationResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReservationResult>, t: Throwable) {
@@ -524,7 +633,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ReservationResult>, response: Response<me.rocketwash.client.data.dto.ReservationResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ReservationResult>,
+                response: Response<me.rocketwash.client.data.dto.ReservationResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -627,9 +739,11 @@ class ApiSupportImpl {
     /**
      * get profile
      * */
-    fun getProfile(sessionId: String,
-                   functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
-                   functionError: (Throwable) -> Unit) {
+    fun getProfile(
+        sessionId: String,
+        functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().getProfile(sessionId)
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
@@ -638,7 +752,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ProfileResult>, response: Response<me.rocketwash.client.data.dto.ProfileResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ProfileResult>,
+                response: Response<me.rocketwash.client.data.dto.ProfileResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -656,9 +773,11 @@ class ApiSupportImpl {
     /**
      * get questions
      * */
-    fun getQuestions(sessionId: String,
-                     functionSuccess: (me.rocketwash.client.data.dto.QuestionsResult) -> Unit,
-                     functionError: (Throwable) -> Unit) {
+    fun getQuestions(
+        sessionId: String,
+        functionSuccess: (me.rocketwash.client.data.dto.QuestionsResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().getQuestions(sessionId)
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.QuestionsResult> {
@@ -667,7 +786,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.QuestionsResult>, response: Response<me.rocketwash.client.data.dto.QuestionsResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.QuestionsResult>,
+                response: Response<me.rocketwash.client.data.dto.QuestionsResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -685,17 +807,20 @@ class ApiSupportImpl {
     /**
      * Put reservation payment from tinkoff requiring
      * */
-    fun putReservationPayment(sessionId: String,
-                              reservationId: Int,
-                              organizationId: Int,
-                              tinkoffTransactionId: Int,
-                              functionSuccess: (me.rocketwash.client.data.dto.ReservationPaymentResult) -> Unit,
-                              functionError: (Throwable) -> Unit) {
+    fun putReservationPayment(
+        sessionId: String,
+        reservationId: Int,
+        organizationId: Int,
+        tinkoffTransactionId: Long,
+        functionSuccess: (me.rocketwash.client.data.dto.ReservationPaymentResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().putReservationPayment(
-                sessionId,
-                reservationId,
-                organizationId,
-                tinkoffTransactionId)
+            sessionId,
+            reservationId,
+            organizationId,
+            tinkoffTransactionId
+        )
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReservationPaymentResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReservationPaymentResult>, t: Throwable) {
@@ -703,7 +828,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ReservationPaymentResult>, response: Response<me.rocketwash.client.data.dto.ReservationPaymentResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ReservationPaymentResult>,
+                response: Response<me.rocketwash.client.data.dto.ReservationPaymentResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -721,11 +849,13 @@ class ApiSupportImpl {
     /**
      * Delete reservation by id
      * */
-    fun cancelReservation(sessionId: String,
-                          reservationId: Int,
-                          organizationId: Int,
-                          functionSuccess: (me.rocketwash.client.data.dto.ReserveCancelResult) -> Unit,
-                          functionError: (Throwable) -> Unit) {
+    fun cancelReservation(
+        sessionId: String,
+        reservationId: Int,
+        organizationId: Int,
+        functionSuccess: (me.rocketwash.client.data.dto.ReserveCancelResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().deleteReservation(sessionId, reservationId, organizationId)
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReserveCancelResult> {
@@ -734,7 +864,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ReserveCancelResult>, response: Response<me.rocketwash.client.data.dto.ReserveCancelResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ReserveCancelResult>,
+                response: Response<me.rocketwash.client.data.dto.ReserveCancelResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -751,10 +884,12 @@ class ApiSupportImpl {
     /**
      * set phone
      * */
-    fun setPhone(sessionId: String,
-                 phone: String,
-                 functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
-                 functionError: (Throwable) -> Unit) {
+    fun setPhone(
+        sessionId: String,
+        phone: String,
+        functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().setPhone(sessionId, phone)
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
@@ -763,7 +898,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ProfileResult>, response: Response<me.rocketwash.client.data.dto.ProfileResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ProfileResult>,
+                response: Response<me.rocketwash.client.data.dto.ProfileResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
@@ -781,10 +919,12 @@ class ApiSupportImpl {
     /**
      * verify phone
      * */
-    fun verifyPhone(sessionId: String,
-                    pin: String,
-                    functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
-                    functionError: (Throwable) -> Unit) {
+    fun verifyPhone(
+        sessionId: String,
+        pin: String,
+        functionSuccess: (me.rocketwash.client.data.dto.ProfileResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
         val call = getInstanceApiSupport().verifyPhone(sessionId, pin)
 
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
@@ -793,7 +933,10 @@ class ApiSupportImpl {
                 requests.remove(call)
             }
 
-            override fun onResponse(call: Call<me.rocketwash.client.data.dto.ProfileResult>, response: Response<me.rocketwash.client.data.dto.ProfileResult>) {
+            override fun onResponse(
+                call: Call<me.rocketwash.client.data.dto.ProfileResult>,
+                response: Response<me.rocketwash.client.data.dto.ProfileResult>
+            ) {
                 try {
                     functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
