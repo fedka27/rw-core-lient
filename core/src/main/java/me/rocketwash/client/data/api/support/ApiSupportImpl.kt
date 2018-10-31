@@ -5,9 +5,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
 import me.rocketwash.client.BuildConfig;
-import me.rocketwash.client.data.dto.ProfileResult
 import me.rocketwash.client.data.dto.sign_in.LoginData
-import me.rocketwash.client.data.dto.sign_in.SignIn
 import me.rocketwash.client.data.responses.BaseResponse
 import retrofit2.Callback
 import retrofit2.Response
@@ -66,7 +64,7 @@ class ApiSupportImpl {
         functionSuccess: (BaseResponse<LoginData>) -> Unit,
         functionError: (Throwable) -> Unit
     ) {
-        val call = getInstanceApiSupport().signIn(SignIn(phone, pincode))
+        val call = getInstanceApiSupport().signIn(phone, pincode)
 
         call.enqueue(object : Callback<BaseResponse<LoginData>> {
             override fun onFailure(call: Call<BaseResponse<LoginData>>, t: Throwable) {

@@ -15,7 +15,10 @@ interface ApiRocketwash {
      * */
     @Deprecated("old method. Use coroutines")
     @POST("session/sign_in")
-    fun signIn(@Body signIn: SignIn): Call<BaseResponse<LoginData>>
+    fun signIn(
+        @Query("phone") phone: String,
+        @Query("pin") pinCode: String
+    ): Call<BaseResponse<LoginData>>
 
     /**
      * Nearest Washes
