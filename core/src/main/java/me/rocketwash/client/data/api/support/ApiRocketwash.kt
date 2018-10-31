@@ -15,17 +15,18 @@ interface ApiRocketwash {
      * */
     @Deprecated("old method. Use coroutines")
     @POST("session/sign_in")
-    fun signIn(signIn: SignIn): Call<BaseResponse<LoginData>>
+    fun signIn(@Body signIn: SignIn): Call<BaseResponse<LoginData>>
 
     /**
      * Nearest Washes
      * */
     @GET("service_locations/nearest")
-    fun getNearestWashes(@Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
-                         @Query("latitude") latitude: Double,
-                         @Query("longitude") longitude: Double,
-                         @Query("distance") distance: Int,
-                         @Query("page") page: Int
+    fun getNearestWashes(
+        @Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
+        @Query("latitude") latitude: Double,
+        @Query("longitude") longitude: Double,
+        @Query("distance") distance: Int,
+        @Query("page") page: Int
     ): Call<me.rocketwash.client.data.dto.WashServiceResult>
 
     /**
@@ -38,38 +39,42 @@ interface ApiRocketwash {
      * Add to favorite
      * */
     @POST("favourites")
-    fun addToFavorite(@Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
-                      @Query("id") washId: Int,
-                      @Query("organization_id") organizationId: Int
+    fun addToFavorite(
+        @Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
+        @Query("id") washId: Int,
+        @Query("organization_id") organizationId: Int
     ): Call<me.rocketwash.client.data.dto.ProfileResult>
 
     /**
      * Remove favorite
      * */
     @DELETE("favourites/{favorite_id}")
-    fun deleteFavorite(@Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
-                       @Path("favorite_id") favoriteId: Int
+    fun deleteFavorite(
+        @Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
+        @Path("favorite_id") favoriteId: Int
     ): Call<me.rocketwash.client.data.dto.RemoveFavoriteResult>
 
     /**
      * Cancel reserve
      * */
     @POST("reservations/{id}")
-    fun cancelReserve(@Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
-                      @Path("id") washId: Int,
-                      @Query("organization_id") organizationId: Int
+    fun cancelReserve(
+        @Header(me.rocketwash.client.data.api.ApiRocketWashCoroutines.HEADER_SESSION) sessionId: String,
+        @Path("id") washId: Int,
+        @Query("organization_id") organizationId: Int
     ): Call<me.rocketwash.client.data.dto.ReserveCancelResult>
 
     /**
      * Available times of wash service
      * */
     @GET("service_locations/{id}/available_times")
-    fun getAvailableTimes(@Header(HEADER_SESSION) sessionId: String,
-                          @Path("id") id: Int,
-                          @Query("organization_id") organizationId: Int,
-                          @Query("time_range_start") timeRangeStart: String,
-                          @Query("time_range_end") timeRangeEnd: String,
-                          @Query("services_duration") servicesDuration: Int
+    fun getAvailableTimes(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Path("id") id: Int,
+        @Query("organization_id") organizationId: Int,
+        @Query("time_range_start") timeRangeStart: String,
+        @Query("time_range_end") timeRangeEnd: String,
+        @Query("services_duration") servicesDuration: Int
     ): Call<me.rocketwash.client.data.dto.AvailableTimesResult>
 
     /**
@@ -83,20 +88,22 @@ interface ApiRocketwash {
      * Services
      * */
     @GET("services")
-    fun services(@Header(HEADER_SESSION) sessionId: String,
-                 @Query("service_location_id") serviceId: Int,
-                 @Query("car_model_id") carModelId: Int,
-                 @Query("organization_id") organizationId: Int
+    fun services(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("service_location_id") serviceId: Int,
+        @Query("car_model_id") carModelId: Int,
+        @Query("organization_id") organizationId: Int
     ): Call<me.rocketwash.client.data.dto.ChoiseServiceResult>
 
     /**
      * Create car
      * */
     @POST("cars")
-    fun createCar(@Header(HEADER_SESSION) sessionId: String,
-                  @Query("car_make_id") carMakeId: Int,
-                  @Query("car_model_id") carModelId: Int,
-                  @Query("tag") tag: String
+    fun createCar(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("car_make_id") carMakeId: Int,
+        @Query("car_model_id") carModelId: Int,
+        @Query("tag") tag: String
     ): Call<me.rocketwash.client.data.dto.PostCarResult>
 
     /**
@@ -116,9 +123,10 @@ interface ApiRocketwash {
     fun getMobileInfo(@Query("organization_id") organizationId: Int? = null): Call<me.rocketwash.client.data.dto.InfoResult>
 
     @GET("reservations/{id}")
-    fun getReservationDetails(@Header(HEADER_SESSION) sessionId: String,
-                              @Query("id") id: Int,
-                              @Query("organization_id") organizationId: Int
+    fun getReservationDetails(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("id") id: Int,
+        @Query("organization_id") organizationId: Int
     ): Call<me.rocketwash.client.data.dto.OrderDetailResponse>
 
     /**
@@ -128,17 +136,20 @@ interface ApiRocketwash {
     @POST("user_actions/request_pin")
     fun requestNewPin(@Query("phone") phone: String): Call<me.rocketwash.client.data.dto.PinResult>
 
-    @GET("https://maps.googleapis.com/maps/api/directions/json?" +
-            "origin={origin_latitude},{origin_longitude}" +
-            "&" +
-            "destination={destination_latitude},{destination_longitude}" +
-            "&" +
-            "sensor=false")
+    @GET(
+        "https://maps.googleapis.com/maps/api/directions/json?" +
+                "origin={origin_latitude},{origin_longitude}" +
+                "&" +
+                "destination={destination_latitude},{destination_longitude}" +
+                "&" +
+                "sensor=false"
+    )
     //todo change to actual model
-    fun mapDirection(@Path("origin_latitude") originLatitude: Double,
-                     @Path("origin_longitude") originLongitude: Double,
-                     @Path("destination_longitude") destinationLatitude: Double,
-                     @Path("destination_longitude") destinationLongitude: Double
+    fun mapDirection(
+        @Path("origin_latitude") originLatitude: Double,
+        @Path("origin_longitude") originLongitude: Double,
+        @Path("destination_longitude") destinationLatitude: Double,
+        @Path("destination_longitude") destinationLongitude: Double
     ): Call<String>
 
     /**
@@ -146,13 +157,14 @@ interface ApiRocketwash {
      * @param scope aggregator or individual
      * */
     @POST("reviews")
-    fun answerOfQuestions(@Header(HEADER_SESSION) sessionId: String,
-                          @Query("reservation_id") reservationId: Int,
-                          @Query("organization_id") organizationId: Int,
-                          @Query("scope") scope: String,
-                          @QueryMap reviewScaleIds: Map<String, Int>,
-                          @QueryMap ratings: Map<String, Int>,
-                          @QueryMap comments: Map<String, String?>
+    fun answerOfQuestions(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("reservation_id") reservationId: Int,
+        @Query("organization_id") organizationId: Int,
+        @Query("scope") scope: String,
+        @QueryMap reviewScaleIds: Map<String, Int>,
+        @QueryMap ratings: Map<String, Int>,
+        @QueryMap comments: Map<String, String?>
     ): Call<me.rocketwash.client.data.dto.AnswersResult>
 
 
@@ -168,47 +180,54 @@ interface ApiRocketwash {
 
 
     @POST("reservations")
-    fun reservation(@Header(HEADER_SESSION) sessionId: String,
-                    @Query("carwash_id") carwashId: Int,
-                    @Query("car_id") carId: Int,
-                    @Query("organization_id") organizationId: Int,
-                    @Query("time_from") timeFrom: String,
-                    @QueryMap ids: Map<String, Int>,
-                    @QueryMap counts: Map<String, Int>
+    fun reservation(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("carwash_id") carwashId: Int,
+        @Query("car_id") carId: Int,
+        @Query("organization_id") organizationId: Int,
+        @Query("time_from") timeFrom: String,
+        @QueryMap ids: Map<String, Int>,
+        @QueryMap counts: Map<String, Int>
     ): Call<me.rocketwash.client.data.dto.ReservationResult>
 
     /**
      * Put reservation payment
      * */
     @PUT("reservations/{reservation_id}")
-    fun putReservationPayment(@Header(HEADER_SESSION) sessionId: String,
-                              @Path("reservation_id") reservationId: Int,
-                              @Query("organization_id") organizationId: Int,
-                              @Query("tinkoff_transaction_id") tinkoffTransactionId: Long
+    fun putReservationPayment(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Path("reservation_id") reservationId: Int,
+        @Query("organization_id") organizationId: Int,
+        @Query("tinkoff_transaction_id") tinkoffTransactionId: Long
     ): Call<me.rocketwash.client.data.dto.ReservationPaymentResult>
 
     /**
      * Delete reservation by id
      * */
     @DELETE("reservations/{reservation_id}")
-    fun deleteReservation(@Header(HEADER_SESSION) sessionId: String,
-                          @Path("reservation_id") reservationId: Int,
-                          @Query("organization_id") organizationId: Int
+    fun deleteReservation(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Path("reservation_id") reservationId: Int,
+        @Query("organization_id") organizationId: Int
     ): Call<me.rocketwash.client.data.dto.ReserveCancelResult>
 
     /**
      * Set phone
      * */
     @POST("user_actions/set_phone")
-    fun setPhone(@Header(HEADER_SESSION) sessionId: String,
-                 @Query("phone") phone: String): Call<me.rocketwash.client.data.dto.ProfileResult>
+    fun setPhone(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("phone") phone: String
+    ): Call<me.rocketwash.client.data.dto.ProfileResult>
 
     /**
      * Verify phone
      * */
     @POST("user_actions/verify_phone")
-    fun verifyPhone(@Header(HEADER_SESSION) sessionId: String,
-                    @Query("pin") pin: String): Call<me.rocketwash.client.data.dto.ProfileResult>
+    fun verifyPhone(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("pin") pin: String
+    ): Call<me.rocketwash.client.data.dto.ProfileResult>
 
     //todo set other methods from spice manager
 

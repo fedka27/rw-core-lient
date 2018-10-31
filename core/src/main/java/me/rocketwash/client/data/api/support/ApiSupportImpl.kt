@@ -63,7 +63,7 @@ class ApiSupportImpl {
 
     fun signIn(
         phone: String, pincode: String,
-        functionSuccess: (LoginData) -> Unit,
+        functionSuccess: (BaseResponse<LoginData>) -> Unit,
         functionError: (Throwable) -> Unit
     ) {
         val call = getInstanceApiSupport().signIn(SignIn(phone, pincode))
@@ -76,7 +76,7 @@ class ApiSupportImpl {
 
             override fun onResponse(call: Call<BaseResponse<LoginData>>, response: Response<BaseResponse<LoginData>>) {
                 try {
-                    functionSuccess.invoke(apiMapper.mapResponse(response).data)
+                    functionSuccess.invoke(apiMapper.mapResponse(response))
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
