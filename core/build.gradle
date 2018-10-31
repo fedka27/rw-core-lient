@@ -1,0 +1,85 @@
+apply plugin: 'com.android.library'
+
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "BASE_URL", "\"https://beta.rocketwash.me/v3/\"")
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+
+    /*Kotlin*/
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    /*Json parser - gson*/
+    implementation 'com.google.code.gson:gson:2.8.5'
+
+    /*Kotlin Coroutines*/
+    implementation kotlinx("kotlinx-coroutines-core")
+    implementation kotlinx("kotlinx-coroutines-android")
+    implementation "com.jakewharton.retrofit:retrofit2-kotlin-coroutines-experimental-adapter:1.0.0"
+
+    /*Retrofit*/
+    implementation retrofit("retrofit")
+    implementation retrofit("converter-gson")
+    implementation okhttp("logging-interceptor")
+}
+
+kotlin {
+    experimental {
+        coroutines "enable"
+    }
+}
+
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'me.rocketwash.core'
+
+    publishedGroupId = 'me.rocketwash.core'
+    libraryName = 'RocketWash Core'
+    artifact = 'core'
+
+    libraryDescription = 'Core of ApiRocketWashCoroutines to RocketWash'
+
+    siteUrl = 'https://github.com/Saicheg/rw-android'
+    gitUrl = 'https://github.com/Saicheg/rw-android.git'
+
+    libraryVersion = '0.0.3'
+
+    developerId = 'trubs'
+    developerName = 'Trubitsyn Fedor'
+    developerEmail = 'trubitsyn.fedya@yandex.ru'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+
+apply from: 'upload.gradle'

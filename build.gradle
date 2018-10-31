@@ -1,0 +1,50 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext {
+        kotlin_version = '1.2.71'
+        supportVersion = '27.1.1'
+        retrofit_version = '2.4.0'
+        okhttp_version = '3.11.0'
+        roomVersion = '1.1.1'
+        coroutine_version = '0.26.0'
+
+
+        support = { m, v = null -> "com.android.support$m:${v == null ? supportVersion : v}" }
+        retrofit = { m -> "com.squareup.retrofit2:$m:$retrofit_version" }
+        kotlinx = { "org.jetbrains.kotlinx:$it:$coroutine_version" }
+        okhttp = { m -> "com.squareup.okhttp3:$m:$okhttp_version" }
+        dagger = { m -> "com.google.dagger:$m:2.16" }
+        roomDB = { m -> "android.arch.persistence.room:$m:$roomVersion" }
+    }
+    repositories {
+        jcenter()
+        google()
+        mavenCentral()
+        maven { url 'https://maven.fabric.io/public' }
+        maven { url 'https://dl.bintray.com/trubs/maven' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.2.1'
+        classpath 'com.google.gms:google-services:4.1.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'io.fabric.tools:gradle:1.+'
+
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        google()
+        mavenCentral()
+        maven { url 'https://maven.fabric.io/public' }
+        maven { url 'https://dl.bintray.com/trubs/maven' }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
