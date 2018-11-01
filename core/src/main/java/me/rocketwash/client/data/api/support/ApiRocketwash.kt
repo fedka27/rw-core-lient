@@ -168,11 +168,10 @@ interface ApiRocketwash {
     @GET("profile")
     fun getProfile(@Header(HEADER_SESSION) sessionId: String): Call<ProfileResult>
 
-    @FormUrlEncoded
     @PUT("profile")
     fun putProfile(
         @Header(HEADER_SESSION) sessionId: String,
-        @Field("user[name]") username: String?
+        @Query("user[name]") username: String?
     ): Call<ProfileResult>
 
 

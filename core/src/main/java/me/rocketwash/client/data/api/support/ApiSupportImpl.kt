@@ -189,7 +189,7 @@ class ApiSupportImpl {
 
                 val result = apiMapper.mapResponse(response.await())
 
-                saveUsername(sessionId, profile.full_name, functionSuccess, functionError)
+                saveUsername(sessionId, profile.name, functionSuccess, functionError)
 
             }
 
