@@ -126,7 +126,7 @@ class ApiSupportImpl {
 
     }
 
-    fun saveUsername(
+    fun saveProfile(
         sessionId: String,
         profile: Profile,
         functionSuccess: (ProfileResult) -> Unit,
@@ -139,13 +139,10 @@ class ApiSupportImpl {
         for (carAttrs in profile.cars_attributes) {
 
             val call =
-                if (carAttrs.id == 0 && carAttrs.type == 0) { //Add car
-                    getInstanceApiSupport().createCar(
+                if (carAttrs.id > 0 && carAttrs.type == 2) { //Delete car
+                    getInstanceApiSupport().deleteCar(
                         sessionId,
-                        carAttrs.car_make_id,
-                        carAttrs.car_model_id,
-                        carAttrs.year,
-                        carAttrs.tag
+                        carAttrs.id
                     )
                 } else if (carAttrs.id > 0 && carAttrs.type == 0) { //Update
                     getInstanceApiSupport().updateCar(
@@ -156,19 +153,22 @@ class ApiSupportImpl {
                         carAttrs.year,
                         carAttrs.tag
                     )
-                } else { //Delete
-                    getInstanceApiSupport().deleteCar(
+                } else { //Create car
+                    getInstanceApiSupport().createCar(
                         sessionId,
-                        carAttrs.id
+                        carAttrs.car_make_id,
+                        carAttrs.car_model_id,
+                        carAttrs.year,
+                        carAttrs.tag
                     )
                 }
 
             call.enqueue(object : Callback<BaseResponse<CarsAttributes>> {
                 override fun onFailure(call: Call<BaseResponse<CarsAttributes>>, t: Throwable) {
+                    functionError.invoke(t)
                     requestIndex++
-                    requests.remove(call)
                     if (requestIndex == requestCount) {
-                        saveUsername(sessionId, profile, functionSuccess, functionError)
+                        requests.remove(call)
                     }
                 }
 
@@ -177,9 +177,9 @@ class ApiSupportImpl {
                     response: Response<BaseResponse<CarsAttributes>>
                 ) {
                     requestIndex++
-                    requests.remove(call)
                     if (requestIndex == requestCount) {
-                        saveUsername(sessionId, profile, functionSuccess, functionError)
+                        saveUsername(sessionId, profile.full_name, functionSuccess, functionError)
+                        requests.remove(call)
                     }
                 }
 
