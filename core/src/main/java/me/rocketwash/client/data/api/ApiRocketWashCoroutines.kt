@@ -1,14 +1,12 @@
 package me.rocketwash.client.data.api
 
 import kotlinx.coroutines.experimental.Deferred
+import me.rocketwash.client.data.dto.CarsAttributes
 import me.rocketwash.client.data.dto.sign_in.LoginData
 import me.rocketwash.client.data.responses.*
 import retrofit2.Call
 import retrofit2.Response
-import retrofit2.http.Header
-import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Query
+import retrofit2.http.*
 
 //todo add other api method
 interface ApiRocketWashCoroutines {
@@ -84,4 +82,22 @@ interface ApiRocketWashCoroutines {
                @Query("car_make_id") brandId: String,
                @Query("car_model_id") modelId: String,
                @Query("tag") carNumber: String): Deferred<Response<BaseResponse<me.rocketwash.client.data.dto.CarsAttributes>>>
+
+
+    @PUT("cars/id")
+    fun updateCar(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("id") carId: Int,
+        @Query("car_make_id") carMakeId: Int,
+        @Query("car_model_id") carModelId: Int,
+        @Query("year") year: Int,
+        @Query("tag") tag: String
+    ): Deferred<Response<BaseResponse<CarsAttributes>>>
+
+    @DELETE("cars/id")
+    fun deleteCar(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("id") carId: Int
+    ): Deferred<Response<BaseResponse<CarsAttributes>>>
+
 }

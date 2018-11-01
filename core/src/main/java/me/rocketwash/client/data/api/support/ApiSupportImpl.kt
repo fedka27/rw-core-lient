@@ -1,5 +1,8 @@
 package me.rocketwash.client.data.api.support
 
+import com.jakewharton.retrofit2.adapter.kotlin.coroutines.experimental.CoroutineCallAdapterFactory
+import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.android.Main
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
@@ -12,12 +15,14 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.time.Year
+import kotlin.coroutines.experimental.CoroutineContext
 
 class ApiSupportImpl {
     private var apiMapper = me.rocketwash.client.data.api.mapper.ApiMapper()
 
     companion object {
         private var apiRocketwash: me.rocketwash.client.data.api.support.ApiRocketwash? = null
+        private var apiRocketWashCoroutines: me.rocketwash.client.data.api.ApiRocketWashCoroutines? = null
         private var apiMapper: me.rocketwash.client.data.api.mapper.ApiMapper? = null
         private var apiSupportImpl: ApiSupportImpl? = null
 
@@ -39,6 +44,26 @@ class ApiSupportImpl {
                     .create(me.rocketwash.client.data.api.support.ApiRocketwash::class.java)
             }
             return apiRocketwash!!
+        }
+
+        fun getInstanceApi(): me.rocketwash.client.data.api.ApiRocketWashCoroutines {
+            if (apiRocketWashCoroutines == null) {
+                apiRocketWashCoroutines = Retrofit.Builder()
+                    .baseUrl(BuildConfig.BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .addCallAdapterFactory(CoroutineCallAdapterFactory.invoke())
+                    .client(
+                        OkHttpClient.Builder()
+                            .addInterceptor(
+                                HttpLoggingInterceptor()
+                                    .setLevel(HttpLoggingInterceptor.Level.BODY)
+                            )
+                            .build()
+                    )
+                    .build()
+                    .create(me.rocketwash.client.data.api.ApiRocketWashCoroutines::class.java)
+            }
+            return apiRocketWashCoroutines!!
         }
 
         fun getInstance(): ApiSupportImpl {
@@ -133,61 +158,40 @@ class ApiSupportImpl {
         functionError: (Throwable) -> Unit
     ) {
 
-        val requestCount = profile.cars_attributes.size
-        var requestIndex = 0
+        GlobalScope.launch(Dispatchers.Main) {
+            for (carAttrs in profile.cars_attributes) {
 
-        for (carAttrs in profile.cars_attributes) {
-
-            val call =
-                if (carAttrs.id > 0 && carAttrs.type == 2) { //Delete car
-                    getInstanceApiSupport().deleteCar(
-                        sessionId,
-                        carAttrs.id
-                    )
-                } else if (carAttrs.id > 0 && carAttrs.type == 0) { //Update
-                    getInstanceApiSupport().updateCar(
-                        sessionId,
-                        carAttrs.id,
-                        carAttrs.car_make_id,
-                        carAttrs.car_model_id,
-                        carAttrs.year,
-                        carAttrs.tag
-                    )
-                } else { //Create car
-                    getInstanceApiSupport().createCar(
-                        sessionId,
-                        carAttrs.car_make_id,
-                        carAttrs.car_model_id,
-                        carAttrs.year,
-                        carAttrs.tag
-                    )
-                }
-
-            call.enqueue(object : Callback<BaseResponse<CarsAttributes>> {
-                override fun onFailure(call: Call<BaseResponse<CarsAttributes>>, t: Throwable) {
-                    functionError.invoke(t)
-                    requestIndex++
-                    if (requestIndex == requestCount) {
-                        requests.remove(call)
+                val response =
+                    if (carAttrs.id > 0 && carAttrs.type == 2) { //Delete car
+                        getInstanceApi().deleteCar(
+                            sessionId,
+                            carAttrs.id
+                        )
+                    } else if (carAttrs.id > 0 && carAttrs.type == 0) { //Update
+                        getInstanceApi().updateCar(
+                            sessionId,
+                            carAttrs.id,
+                            carAttrs.car_make_id,
+                            carAttrs.car_model_id,
+                            carAttrs.year,
+                            carAttrs.tag
+                        )
+                    } else { //Create car
+                        getInstanceApi().addCar(
+                            sessionId,
+                            carAttrs.car_make_id.toString(),
+                            carAttrs.car_model_id.toString(),
+                            carAttrs.tag
+                        )
                     }
-                }
 
-                override fun onResponse(
-                    call: Call<BaseResponse<CarsAttributes>>,
-                    response: Response<BaseResponse<CarsAttributes>>
-                ) {
-                    requestIndex++
-                    if (requestIndex == requestCount) {
-                        saveUsername(sessionId, profile.full_name, functionSuccess, functionError)
-                        requests.remove(call)
-                    }
-                }
+                val result = apiMapper.mapResponse(response.await())
 
-            })
+                saveUsername(sessionId, profile.full_name, functionSuccess, functionError)
 
-            requests.add(call)
+            }
+
         }
-
     }
 
     fun saveUsername(
