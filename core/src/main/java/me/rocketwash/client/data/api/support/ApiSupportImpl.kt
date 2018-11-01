@@ -158,7 +158,9 @@ class ApiSupportImpl {
         functionError: (Throwable) -> Unit
     ) {
 
-        GlobalScope.launch(Dispatchers.Main) {
+        GlobalScope.launch(Dispatchers.Main + CoroutineExceptionHandler { coroutineContext, throwable ->
+            functionError.invoke(throwable)
+        }) {
             for (carAttrs in profile.cars_attributes) {
 
                 val response =

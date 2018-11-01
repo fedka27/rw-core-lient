@@ -171,7 +171,7 @@ interface ApiRocketwash {
     @PUT("profile")
     fun putProfile(
         @Header(HEADER_SESSION) sessionId: String,
-        @Query("user[name]") username: String?
+        @Field("user[name]") username: String?
     ): Call<ProfileResult>
 
 
