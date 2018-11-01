@@ -81,7 +81,8 @@ interface ApiRocketWashCoroutines {
     fun addCar(@Header(HEADER_SESSION) session: String,
                @Query("car_make_id") brandId: String,
                @Query("car_model_id") modelId: String,
-               @Query("tag") carNumber: String): Deferred<Response<BaseResponse<me.rocketwash.client.data.dto.CarsAttributes>>>
+               @Query("tag") carNumber: String?
+    ): Deferred<Response<BaseResponse<me.rocketwash.client.data.dto.CarsAttributes>>>
 
 
     @PUT("cars/id")
@@ -91,7 +92,7 @@ interface ApiRocketWashCoroutines {
         @Query("car_make_id") carMakeId: Int,
         @Query("car_model_id") carModelId: Int,
         @Query("year") year: Int,
-        @Query("tag") tag: String
+        @Query("tag") tag: String?
     ): Deferred<Response<BaseResponse<CarsAttributes>>>
 
     @DELETE("cars/id")
