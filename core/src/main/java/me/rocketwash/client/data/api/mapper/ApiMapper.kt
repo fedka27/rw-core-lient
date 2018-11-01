@@ -12,10 +12,11 @@ class ApiMapper {
     @Throws(Exception::class)
     fun <T : BaseResponse<*>> mapResponse(response: Response<T>): T {
 
+        val type = response.raw().request().method()
         val url = response.raw().request().url().toString()
 
 
-        log("url: $url")
+        log("method: $type url: $url")
 
         //todo parse response fix
         val baseResponse = response.body()

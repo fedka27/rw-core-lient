@@ -71,7 +71,7 @@ ext {
     siteUrl = 'https://github.com/Saicheg/rw-android'
     gitUrl = 'https://github.com/Saicheg/rw-android.git'
 
-    libraryVersion = '0.0.18'
+    libraryVersion = '0.0.19'
 
     developerId = 'trubs'
     developerName = 'Trubitsyn Fedor'

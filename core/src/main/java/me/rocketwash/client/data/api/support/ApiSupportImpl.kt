@@ -10,6 +10,7 @@ import me.rocketwash.client.BuildConfig;
 import me.rocketwash.client.data.dto.*
 import me.rocketwash.client.data.dto.sign_in.LoginData
 import me.rocketwash.client.data.responses.BaseResponse
+import me.rocketwash.client.utils.log
 import me.rocketwash.client.utils.log_d
 import me.rocketwash.client.utils.tag
 import retrofit2.Callback
@@ -164,33 +165,39 @@ class ApiSupportImpl {
             functionError.invoke(throwable)
         }) {
             profile.cars_attributes.forEach { carAttrs ->
-                val response =
-                    if (carAttrs.id > 0 && carAttrs.type == 2) { //Delete car
-                        getInstanceApi().deleteCar(
-                            sessionId,
-                            carAttrs.id
-                        )
-                    } else if (carAttrs.id > 0 && carAttrs.type == 0) { //Update
-                        getInstanceApi().updateCar(
-                            sessionId,
-                            carAttrs.id,
-                            carAttrs.car_make_id,
-                            carAttrs.car_model_id,
-                            carAttrs.year,
-                            carAttrs.tag
-                        )
-                    } else { //Create car
-                        getInstanceApi().addCar(
-                            sessionId,
-                            carAttrs.car_make_id.toString(),
-                            carAttrs.car_model_id.toString(),
-                            carAttrs.tag
-                        )
-                    }
+                var response: Deferred<Response<BaseResponse<CarsAttributes>>>? = null
 
-                val result = apiMapper.mapResponse(response.await())
+                if (carAttrs.id > 0 && carAttrs.type == 2) { //Delete car
+                    log_d(tag(), "Delete car")
+                    response = getInstanceApi().deleteCar(
+                        sessionId,
+                        carAttrs.id
+                    )
+                } else if (carAttrs.id > 0 && carAttrs.type == 0) { //Update
+                    log_d(tag(), "Update car")
+                    response = getInstanceApi().updateCar(
+                        sessionId,
+                        carAttrs.id,
+                        carAttrs.car_make_id,
+                        carAttrs.car_model_id,
+                        carAttrs.year,
+                        carAttrs.tag
+                    )
+                } else if (carAttrs.id == 0 && carAttrs.type == 0) { //Create car
+                    log_d(tag(), "Create car")
+                    response = getInstanceApi().addCar(
+                        sessionId,
+                        carAttrs.car_make_id.toString(),
+                        carAttrs.car_model_id.toString(),
+                        carAttrs.tag
+                    )
+                }
 
-                log_d(tag(), "${carAttrs.type} ${result.status}")
+                response?.let {
+                    val result = apiMapper.mapResponse(it.await())
+
+                    log_d(tag(), "${carAttrs.type} ${result.status}")
+                }
             }
 
             log_d(tag(), "saving profile name")
