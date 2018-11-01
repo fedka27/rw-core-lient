@@ -10,6 +10,8 @@ import me.rocketwash.client.BuildConfig;
 import me.rocketwash.client.data.dto.*
 import me.rocketwash.client.data.dto.sign_in.LoginData
 import me.rocketwash.client.data.responses.BaseResponse
+import me.rocketwash.client.utils.log_d
+import me.rocketwash.client.utils.tag
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
@@ -161,8 +163,7 @@ class ApiSupportImpl {
         GlobalScope.launch(Dispatchers.Main + CoroutineExceptionHandler { coroutineContext, throwable ->
             functionError.invoke(throwable)
         }) {
-            for (carAttrs in profile.cars_attributes) {
-
+            profile.cars_attributes.forEach { carAttrs ->
                 val response =
                     if (carAttrs.id > 0 && carAttrs.type == 2) { //Delete car
                         getInstanceApi().deleteCar(
@@ -189,8 +190,10 @@ class ApiSupportImpl {
 
                 val result = apiMapper.mapResponse(response.await())
 
+                log_d(tag(), "${carAttrs.type} ${result.status}")
             }
 
+            log_d(tag(), "saving profile name")
             saveUsername(sessionId, profile.name, functionSuccess, functionError)
 
         }
