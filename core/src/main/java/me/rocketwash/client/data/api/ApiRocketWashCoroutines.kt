@@ -1,7 +1,10 @@
 package me.rocketwash.client.data.api
 
+import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Deferred
 import me.rocketwash.client.data.dto.CarsAttributes
+import me.rocketwash.client.data.dto.OrderCompleted
+import me.rocketwash.client.data.dto.OrderStats
 import me.rocketwash.client.data.dto.sign_in.LoginData
 import me.rocketwash.client.data.responses.*
 import retrofit2.Call
@@ -21,13 +24,15 @@ interface ApiRocketWashCoroutines {
      * @param pin user's pin code from the SMS
      * */
     @POST("session/sign_in")
-    fun signIn(@Query("phone") phone: String,
-               @Query("pin") pin: String
+    fun signIn(
+        @Query("phone") phone: String,
+        @Query("pin") pin: String
     ): Deferred<Response<BaseResponse<LoginData>>>
 
     @POST("session/sign_in")
-    fun signInAsync(@Query("phone") phone: String,
-                    @Query("pin") pin: String
+    fun signInAsync(
+        @Query("phone") phone: String,
+        @Query("pin") pin: String
     ): Call<Response<BaseResponse<me.rocketwash.client.data.dto.sign_in.LoginData>>>
 
     /**
@@ -38,10 +43,11 @@ interface ApiRocketWashCoroutines {
      * */
     @PUT("one_signal/regitster_device")
     //todo change to onesignal register
-    fun registerDevice(@Header(HEADER_SESSION) sessionId: String,
-                       @Query("appId") appId: String,
-                       @Query("playerId") playerId: String,
-                       @Query("organizationId") userToken: String
+    fun registerDevice(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("appId") appId: String,
+        @Query("playerId") playerId: String,
+        @Query("organizationId") userToken: String
     ): Deferred<Response<BaseResponse<me.rocketwash.client.data.dto.base.BaseData>>>
 
     /**
@@ -56,16 +62,20 @@ interface ApiRocketWashCoroutines {
      * @param phone user's phone number must be without + character
      * */
     @POST("user_actions/set_phone")
-    fun setPhone(@Header(HEADER_SESSION) session: String,
-                 @Query("phone") phone: String): Deferred<Response<RegisterPhoneResponse>>
+    fun setPhone(
+        @Header(HEADER_SESSION) session: String,
+        @Query("phone") phone: String
+    ): Deferred<Response<RegisterPhoneResponse>>
 
     /**
      * Verify phone number after register
      * @param phone pin code from the SMS
      * */
     @POST("user_actions/verify_phone")
-    fun verifyPhone(@Header(HEADER_SESSION) session: String,
-                    @Query("pin") phone: String): Deferred<Response<VerifyPhoneResponse>>
+    fun verifyPhone(
+        @Header(HEADER_SESSION) session: String,
+        @Query("pin") phone: String
+    ): Deferred<Response<VerifyPhoneResponse>>
 
 
     /**
@@ -78,11 +88,24 @@ interface ApiRocketWashCoroutines {
      * Add user's car
      * */
     @POST("cars")
-    fun addCar(@Header(HEADER_SESSION) session: String,
-               @Query("car_make_id") brandId: String,
-               @Query("car_model_id") modelId: String,
-               @Query("tag") carNumber: String?
+    fun addCar(
+        @Header(HEADER_SESSION) session: String,
+        @Query("car_make_id") brandId: String,
+        @Query("car_model_id") modelId: String,
+        @Query("tag") carNumber: String?
     ): Deferred<Response<BaseResponse<me.rocketwash.client.data.dto.CarsAttributes>>>
+
+    /**
+     * @param scope is 'completed' or 'active'. Default is 'active'
+     * */
+    @GET("reservations")
+    fun getHistory(
+        @Header(HEADER_SESSION) sessionId: String,
+        @Query("scope") scope: String?
+    ): Deferred<Response<BaseResponse<List<OrderCompleted>>>>
+
+    @GET("reservations/stats")
+    fun getHistoryStats(@Header(HEADER_SESSION) sessionId: String): Deferred<Response<BaseResponse<OrderStats>>>
 
 
     @PUT("cars/id")

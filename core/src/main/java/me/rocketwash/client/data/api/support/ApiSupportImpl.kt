@@ -20,16 +20,15 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.time.Year
 import kotlin.coroutines.experimental.CoroutineContext
 
-class ApiSupportImpl {
+class ApiSupportImpl() {
     private var apiMapper = me.rocketwash.client.data.api.mapper.ApiMapper()
+    private var requests: MutableList<Call<*>> = mutableListOf()
 
     companion object {
         private var apiRocketwash: me.rocketwash.client.data.api.support.ApiRocketwash? = null
         private var apiRocketWashCoroutines: me.rocketwash.client.data.api.ApiRocketWashCoroutines? = null
         private var apiMapper: me.rocketwash.client.data.api.mapper.ApiMapper? = null
-        private var apiSupportImpl: ApiSupportImpl? = null
 
-        @Deprecated("")
         fun getInstanceApiSupport(): me.rocketwash.client.data.api.support.ApiRocketwash {
             if (apiRocketwash == null) {
                 apiRocketwash = Retrofit.Builder()
@@ -69,14 +68,6 @@ class ApiSupportImpl {
             return apiRocketWashCoroutines!!
         }
 
-        fun getInstance(): ApiSupportImpl {
-            if (apiSupportImpl == null) {
-                apiSupportImpl = ApiSupportImpl()
-            }
-
-            return apiSupportImpl!!
-        }
-
         @Deprecated("")
         fun getApiResponseMapperInstance(): me.rocketwash.client.data.api.mapper.ApiMapper {
             if (apiMapper == null) {
@@ -85,8 +76,6 @@ class ApiSupportImpl {
             return apiMapper!!
         }
     }
-
-    private var requests: MutableList<Call<*>> = mutableListOf()
 
     fun signIn(
         phone: String, pincode: String,
@@ -113,6 +102,31 @@ class ApiSupportImpl {
         })
 
         requests.add(call)
+    }
+
+    fun getHistoryCompletable(
+        sessionId: String,
+        functionSuccess: (HistoryCompletableResult) -> Unit,
+        functionError: (Throwable) -> Unit
+    ) {
+        GlobalScope.launch(Dispatchers.Main + CoroutineExceptionHandler { coroutineContext, throwable ->
+            functionError.invoke(throwable)
+        }) {
+            val statsResponse = getInstanceApi().getHistoryStats(sessionId)
+                .await().let { apiMapper.mapResponse(it) }.data
+
+            val historyResponse = getInstanceApi().getHistory(sessionId, "completed")
+                .await().let { apiMapper.mapResponse(it) }.data
+
+            functionSuccess.invoke(
+                HistoryCompletableResult(
+                    statsResponse.total_count,
+                    statsResponse.total_paid_with_bonuses,
+                    statsResponse.total_discount_received,
+                    historyResponse
+                )
+            )
+        }
     }
 
     /**
