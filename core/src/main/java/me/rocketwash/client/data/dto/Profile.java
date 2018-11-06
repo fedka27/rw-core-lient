@@ -19,6 +19,7 @@ public class Profile implements Serializable {
     private String phone;
 
     @SerializedName("cars_attributes")
+    @Nullable
     private List<CarsAttributes> cars_attributes;
 
     @SerializedName("email")
@@ -147,6 +148,7 @@ public class Profile implements Serializable {
         this.email = email;
     }
 
+    @Nullable
     public List<CarsAttributes> getCars_attributes() {
         return cars_attributes;
     }

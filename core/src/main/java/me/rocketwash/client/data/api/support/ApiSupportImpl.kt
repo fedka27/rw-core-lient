@@ -10,19 +10,17 @@ import me.rocketwash.client.BuildConfig;
 import me.rocketwash.client.data.dto.*
 import me.rocketwash.client.data.dto.sign_in.LoginData
 import me.rocketwash.client.data.responses.BaseResponse
-import me.rocketwash.client.utils.log
 import me.rocketwash.client.utils.log_d
 import me.rocketwash.client.utils.tag
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.time.Year
-import kotlin.coroutines.experimental.CoroutineContext
 
 class ApiSupportImpl() {
     private var apiMapper = me.rocketwash.client.data.api.mapper.ApiMapper()
-    private var requests: MutableList<Call<*>> = mutableListOf()
+    private var requestsCall: MutableList<Call<*>> = mutableListOf()
+    private var requestsJobs: MutableList<Job> = mutableListOf()
 
     companion object {
         private var apiRocketwash: me.rocketwash.client.data.api.support.ApiRocketwash? = null
@@ -87,7 +85,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<BaseResponse<LoginData>> {
             override fun onFailure(call: Call<BaseResponse<LoginData>>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(call: Call<BaseResponse<LoginData>>, response: Response<BaseResponse<LoginData>>) {
@@ -96,12 +94,12 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     fun getHistoryCompletable(
@@ -109,7 +107,7 @@ class ApiSupportImpl() {
         functionSuccess: (HistoryCompletableResult) -> Unit,
         functionError: (Throwable) -> Unit
     ) {
-        GlobalScope.launch(Dispatchers.Main + CoroutineExceptionHandler { coroutineContext, throwable ->
+        val job = GlobalScope.launch(Dispatchers.Main + CoroutineExceptionHandler { coroutineContext, throwable ->
             functionError.invoke(throwable)
         }) {
             val statsResponse = getInstanceApi().getHistoryStats(sessionId)
@@ -127,6 +125,8 @@ class ApiSupportImpl() {
                 )
             )
         }
+
+        requestsJobs.add(job)
     }
 
     /**
@@ -147,7 +147,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<BaseResponse<CarsAttributes>> {
             override fun onFailure(call: Call<BaseResponse<CarsAttributes>>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -159,12 +159,12 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
 
     }
 
@@ -175,10 +175,10 @@ class ApiSupportImpl() {
         functionError: (Throwable) -> Unit
     ) {
 
-        GlobalScope.launch(Dispatchers.Main + CoroutineExceptionHandler { coroutineContext, throwable ->
+        val job = GlobalScope.launch(Dispatchers.Main + CoroutineExceptionHandler { coroutineContext, throwable ->
             functionError.invoke(throwable)
         }) {
-            profile.cars_attributes.forEach { carAttrs ->
+            profile.cars_attributes?.forEach { carAttrs ->
                 var response: Deferred<Response<BaseResponse<CarsAttributes>>>? = null
 
                 if (carAttrs.id > 0 && carAttrs.type == 2) { //Delete car
@@ -216,8 +216,9 @@ class ApiSupportImpl() {
 
             log_d(tag(), "saving profile name")
             saveUsername(sessionId, profile.name, functionSuccess, functionError)
-
         }
+
+        requestsJobs.add(job)
     }
 
     fun saveUsername(
@@ -231,7 +232,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<ProfileResult> {
             override fun onFailure(call: Call<ProfileResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(call: Call<ProfileResult>, response: Response<ProfileResult>) {
@@ -241,12 +242,12 @@ class ApiSupportImpl() {
                     functionError.invoke(e)
                 }
 
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -265,7 +266,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.WashServiceResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.WashServiceResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -278,11 +279,11 @@ class ApiSupportImpl() {
                 } catch (e: Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -301,7 +302,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<ChoiseServiceResult> {
             override fun onFailure(call: Call<ChoiseServiceResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(call: Call<ChoiseServiceResult>, response: Response<ChoiseServiceResult>) {
@@ -310,12 +311,12 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -330,7 +331,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReservedResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReservedResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -343,11 +344,11 @@ class ApiSupportImpl() {
                 } catch (e: Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -365,7 +366,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReserveCancelResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReserveCancelResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -377,12 +378,12 @@ class ApiSupportImpl() {
                 } catch (e: Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -399,7 +400,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ProfileResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -411,10 +412,10 @@ class ApiSupportImpl() {
                 } catch (e: Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -430,7 +431,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.RemoveFavoriteResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.RemoveFavoriteResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -442,10 +443,10 @@ class ApiSupportImpl() {
                 } catch (e: Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -460,7 +461,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.WashServiceResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.WashServiceResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -472,10 +473,10 @@ class ApiSupportImpl() {
                 } catch (e: Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -490,7 +491,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.InfoResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.InfoResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -502,10 +503,10 @@ class ApiSupportImpl() {
                 } catch (e: Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -545,7 +546,7 @@ class ApiSupportImpl() {
             }
 
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -560,7 +561,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.CarsMakesResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.CarsMakesResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -572,11 +573,11 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
-        requests.add(call)
+        requestsCall.add(call)
 
     }
 
@@ -592,7 +593,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.EmptyUserResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.EmptyUserResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -604,11 +605,11 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
-        requests.add(call)
+        requestsCall.add(call)
 
     }
 
@@ -624,7 +625,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.OrderDetailResponse> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.OrderDetailResponse>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -636,11 +637,11 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -655,7 +656,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.PinResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.PinResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -667,11 +668,11 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     fun getMapDirection(
@@ -692,7 +693,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<String> {
             override fun onFailure(call: Call<String>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(call: Call<String>, response: Response<String>) {
@@ -704,11 +705,11 @@ class ApiSupportImpl() {
                     e.printStackTrace()
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
         })
 
-        requests.add(call)
+        requestsCall.add(call)
 
     }
 
@@ -745,7 +746,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.AnswersResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.AnswersResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -757,12 +758,12 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     fun reservation(
@@ -791,7 +792,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReservationResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReservationResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -803,12 +804,12 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
 
@@ -910,7 +911,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ProfileResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -923,12 +924,12 @@ class ApiSupportImpl() {
                     functionError.invoke(e)
                 }
 
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -944,7 +945,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.QuestionsResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.QuestionsResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -957,12 +958,12 @@ class ApiSupportImpl() {
                     functionError.invoke(e)
                 }
 
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -986,7 +987,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReservationPaymentResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReservationPaymentResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -999,12 +1000,12 @@ class ApiSupportImpl() {
                     functionError.invoke(e)
                 }
 
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -1022,7 +1023,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ReserveCancelResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ReserveCancelResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -1034,12 +1035,12 @@ class ApiSupportImpl() {
                 } catch (e: java.lang.Exception) {
                     functionError.invoke(e)
                 }
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -1056,7 +1057,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ProfileResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -1069,12 +1070,12 @@ class ApiSupportImpl() {
                     functionError.invoke(e)
                 }
 
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
@@ -1091,7 +1092,7 @@ class ApiSupportImpl() {
         call.enqueue(object : Callback<me.rocketwash.client.data.dto.ProfileResult> {
             override fun onFailure(call: Call<me.rocketwash.client.data.dto.ProfileResult>, t: Throwable) {
                 functionError.invoke(t)
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
             override fun onResponse(
@@ -1104,18 +1105,19 @@ class ApiSupportImpl() {
                     functionError.invoke(e)
                 }
 
-                requests.remove(call)
+                requestsCall.remove(call)
             }
 
         })
 
-        requests.add(call)
+        requestsCall.add(call)
     }
 
     /**
-     * Cancel all requests
+     * Cancel all requestsCall
      * */
     fun cancel() {
-        requests.forEach { it.cancel() }
+        requestsCall.forEach { it.cancel() }
+        requestsJobs.filter { !it.isCancelled }.forEach { it.cancel() }
     }
 }
